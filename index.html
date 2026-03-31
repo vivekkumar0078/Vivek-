@@ -3,10 +3,133 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Index</title>
+    <title>Vayu - Music Synthesizer</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #fff;
+            font-family: 'Segoe UI', sans-serif;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+        h1 { font-size: 48px; text-align: center; margin-bottom: 10px; }
+        .subtitle { text-align: center; opacity: 0.8; margin-bottom: 30px; }
+        .control-group { margin-bottom: 25px; }
+        label { display: block; margin-bottom: 8px; font-weight: 600; }
+        input[type="range"], select {
+            width: 100%;
+            padding: 10px;
+            margin-top: 5px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+        }
+        button {
+            width: 100%;
+            padding: 15px;
+            font-size: 18px;
+            font-weight: bold;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: all 0.3s ease;
+        }
+        button:hover { transform: scale(1.02); }
+        button:active { transform: scale(0.98); }
+    </style>
 </head>
 <body>
-    <h1>Hello, World!</h1>
-    <p>Current Date and Time (UTC): 2026-03-31 07:04:36</p>
+    <div class="container">
+        <h1>🎵 Vayu</h1>
+        <p class="subtitle">The Breath of Sound</p>
+        
+        <div class="control-group">
+            <label>Waveform</label>
+            <select id="waveform">
+                <option value="sine">Sine</option>
+                <option value="square">Square</option>
+                <option value="sawtooth">Sawtooth</option>
+                <option value="triangle">Triangle</option>
+            </select>
+        </div>
+
+        <div class="control-group">
+            <label>Frequency: <span id="freqVal">440</span> Hz</label>
+            <input type="range" id="frequency" min="20" max="2000" value="440">
+        </div>
+
+        <div class="control-group">
+            <label>Volume: <span id="volVal">30</span>%</label>
+            <input type="range" id="volume" min="0" max="100" value="30">
+        </div>
+
+        <button onclick="playNote()">▶ Play (1 sec)</button>
+        <button onclick="stopNote()" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">⏹ Stop</button>
+    </div>
+
+    <script>
+        let audioContext, oscillator, gainNode, isPlaying = false;
+
+        function initAudio() {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+
+        function playNote() {
+            initAudio();
+            if (isPlaying) return;
+            isPlaying = true;
+
+            const waveform = document.getElementById('waveform').value;
+            const freq = parseFloat(document.getElementById('frequency').value);
+            const vol = parseFloat(document.getElementById('volume').value) / 100;
+
+            oscillator = audioContext.createOscillator();
+            gainNode = audioContext.createGain();
+
+            oscillator.type = waveform;
+            oscillator.frequency.setValueAtTime(freq, audioContext.currentTime);
+            gainNode.gain.setValueAtTime(vol, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 1);
+
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            oscillator.start();
+            oscillator.stop(audioContext.currentTime + 1);
+
+            setTimeout(() => { isPlaying = false; }, 1000);
+        }
+
+        function stopNote() {
+            initAudio();
+            if (oscillator) try { oscillator.stop(); } catch(e) {}
+            isPlaying = false;
+        }
+
+        document.getElementById('frequency').oninput = function() {
+            document.getElementById('freqVal').textContent = this.value;
+        };
+        document.getElementById('volume').oninput = function() {
+            document.getElementById('volVal').textContent = this.value;
+        };
+    </script>
 </body>
 </html>
